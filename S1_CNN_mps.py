@@ -335,7 +335,7 @@ def mainn():
     query_loader = torch.utils.data.DataLoader(query_set, batch_size=batch, shuffle=False)
     gallery_loader = torch.utils.data.DataLoader(gallery_set, batch_size=batch, shuffle=False)
 
-    # on small dataset
+    # training on small dataset
     train_set = FaceDataset(
         csv_file='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/labels_train.txt',
         root_dir='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/Final Training Images')
