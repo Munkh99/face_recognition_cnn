@@ -1,3 +1,4 @@
 25 - 04 - 2023 16:44:26,159 -- root -- INFO -- EPOCH = 99, LEARNING RATE = 0.0005, train and testaccuracy:  0.9188584219362059 ; 0.33557046979865773
 25 - 04 - 2023 16:53:27,722 -- root -- INFO -- EPOCH = 1, LEARNING RATE = 0.01, train and testaccuracy:  0.013 ; 0.004
 25 - 04 - 2023 17:55:31,332 -- root -- INFO -- EPOCH = 199, LEARNING RATE = 0.00017, train and testaccuracy:  0.861 ; 0.371
+26 - 04 - 2023 23:04:57,293 -- root -- INFO -- EPOCH = 39, LEARNING RATE = 0.0002, train and testaccuracy:  0.918 ; 0.938

@@ -311,20 +311,19 @@ def mainn():
                         datefmt='%d - %m - %Y %H:%M:%S',
                         level=logging.INFO)
 
-    dataset = FaceDataset(
-        csv_file='/Users/munkhdelger/PycharmProjects/ML_competition/data/faces/ARCHIVE/identity_CelebA_under_1000.txt',
-        # root_dir='/Users/munkhdelger/PycharmProjects/ML_competition/data/faces/ARCHIVE/img_celeba_under_1000')
-        root_dir='data/faces/ARCHIVE/img_celeba_under_1000_cropped')
-    print('dataset length: ', len(dataset))
-    ll = len(dataset)
-    train_split = round(ll * 0.8)
-    validation_split = round(ll - ll * 0.8)
+    # dataset = FaceDataset(
+    #     csv_file='/Users/munkhdelger/PycharmProjects/ML_competition/data/faces/ARCHIVE/identity_CelebA_under_1000.txt',
+    #     # root_dir='/Users/munkhdelger/PycharmProjects/ML_competition/data/faces/ARCHIVE/img_celeba_under_1000')
+    #     root_dir='data/faces/ARCHIVE/img_celeba_under_1000_cropped')
+    # print('dataset length: ', len(dataset))
+    # ll = len(dataset)
+    # train_split = round(ll * 0.8)
+    # validation_split = round(ll - ll * 0.8)
     batch = 64
-
-    train_set, val_set = torch.utils.data.random_split(dataset, [train_split, validation_split])
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch, shuffle=True)
-    validation_loader = torch.utils.data.DataLoader(val_set, batch_size=batch, shuffle=False)
-    out_layer = dataset.get_unique_labels()
+    # train_set, val_set = torch.utils.data.random_split(dataset, [train_split, validation_split])
+    # train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch, shuffle=True)
+    # validation_loader = torch.utils.data.DataLoader(val_set, batch_size=batch, shuffle=False)
+    # out_layer = dataset.get_unique_labels()
 
     path_to_query = '/Users/munkhdelger/PycharmProjects/ML_competition/data/query/'
     path_to_gallery = '/Users/munkhdelger/PycharmProjects/ML_competition/data/gallery/'
@@ -336,16 +335,17 @@ def mainn():
     query_loader = torch.utils.data.DataLoader(query_set, batch_size=batch, shuffle=False)
     gallery_loader = torch.utils.data.DataLoader(gallery_set, batch_size=batch, shuffle=False)
 
-    # train_set = FaceDataset(
-    #     csv_file='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/labels_train.txt',
-    #     root_dir='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/Final Training Images')
-    # train_loader = torch.utils.data.DataLoader(train_set, batch_size=16, shuffle=True)
-    #
-    # validation_set = FaceDataset(
-    #     csv_file='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/labels_test.txt',
-    #     root_dir='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/Final Testing Images')
-    # validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=16)
-    # out_layer = train_set.get_unique_labels()
+    # on small dataset
+    train_set = FaceDataset(
+        csv_file='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/labels_train.txt',
+        root_dir='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/Final Training Images')
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=16, shuffle=True)
+
+    validation_set = FaceDataset(
+        csv_file='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/labels_test.txt',
+        root_dir='/Users/munkhdelger/PycharmProjects/ML_competition/data/Face Images/Final Testing Images')
+    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=16)
+    out_layer = train_set.get_unique_labels()
 
     print('outlayer length: ', out_layer)
     ###
@@ -381,7 +381,7 @@ def mainn():
     top_n = 20
     result = find_similarity(feature_query, feature_gallery, top_n)
 
-    # preperation for submit
+    # preparation for submit
     query_random_guess = dict()
     query_random_guess['groupname'] = "Capybara"
     query_random_guess["images"] = result
