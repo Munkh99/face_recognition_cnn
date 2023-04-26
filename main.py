@@ -124,7 +124,7 @@ def main():
                                    ])),
         batch_size=64, shuffle=False)
     # print(train_data)
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    device = "mps" # cpu if windows, cuda if windows&gpu
     device = torch.device(device)
     print(f"Using device: {device}")
 
