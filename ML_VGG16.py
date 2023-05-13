@@ -17,9 +17,9 @@ from pathlib import Path
 class VGG(nn.Module):
     def __init__(self, out):
         super(VGG, self).__init__()
-        vgg16 = models.vgg16(pretrained=True)
-        vgg16.classifier.append(nn.ReLU())
-        vgg16.classifier.append(nn.Linear(in_features=1000, out_features=out))
+        vgg16 = models.vgg16(weights="IMAGENET1K_V1")
+        num_output_feats = vgg16.classifier[-1].in_features  # dim  of the features
+        vgg16.classifier[-1] = torch.nn.Linear(num_output_feats, out)
 
         for i, param in enumerate(vgg16.features.parameters()):
             if i < 10:
@@ -140,7 +140,7 @@ def validation(model, test_loader, criterion, device):
 
 
 # 0.0004 98.44
-def main(batch_size=64, learning_rate=0.0002, num_epochs=80, device="mps", run_name="VGG16"):
+def main(batch_size=64, learning_rate=0.0002, num_epochs=8, device="mps", run_name="VGG16"):
     logging.basicConfig(filename='logs/log_vgg16.log',
                         filemode='a',
                         format='%(asctime)s,%(msecs)d -- %(name)s -- %(levelname)s -- %(message)s',
