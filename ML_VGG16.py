@@ -52,7 +52,7 @@ class FaceDataset(torch.utils.data.Dataset):
 
         self.transform = torchvision.transforms.Compose([
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Resize((224, 224)),
+            torchvision.transforms.Resize((224, 224), antialias=True),
             # torchvision.transforms.RandomHorizontalFlip(),
             # torchvision.transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.1),
             # torchvision.transforms.RandomAffine(degrees=40, translate=None, scale=(1, 2), shear=15),
