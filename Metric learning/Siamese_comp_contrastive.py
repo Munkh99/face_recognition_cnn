@@ -48,8 +48,8 @@ class SiameseNetwork(nn.Module):
         for param in res_n.layer4.parameters():
             param.requires_grad = True
 
-        for param in res_n.layer3.parameters():
-            param.requires_grad = True
+        # for param in res_n.layer3.parameters():
+        #     param.requires_grad = True
 
         # Check the requires_grad status of each layer
         for name, param in res_n.named_parameters():
@@ -109,28 +109,35 @@ def train(model, device, train_loader, optimizer, criterion):
         images_1 = images_1.to(device)
         images_2 = images_2.to(device)
         targets = targets.to(device)
+
         optimizer.zero_grad()
+
         oupt1, oupt2 = model(images_1, images_2)
+
         loss = criterion(oupt1, oupt2, targets)
         loss.backward()
         optimizer.step()
 
         # Update cumulative loss
         total_loss += loss.item()
+
         # Calculate accuracy
-        # predicted = (oupt1<oupt2 ).float()  # Convert probabilities to binary predictions
-        # correct += predicted.eq(targets).sum().item()
+        predicted_similarity = torch.nn.functional.pairwise_distance(oupt1, oupt2)
+        predicted_labels = (predicted_similarity > 0.5).float()  # Binary labels (0 or 1)
+        correct += predicted_labels.eq(targets).sum().item()  # Count correct predictions
+
+        # Calculate total
         total_samples += targets.size(0)
 
         # Calculate average loss and accuracy
-    avg_loss = total_loss / len(train_loader)
-    # accuracy = correct / total_samples
+    avg_loss = total_loss / total_samples
+    accuracy = correct / total_samples
 
     # Print epoch-level statistics
     # print('Epoch: {}\tAverage Loss: {:.6f}\tAccuracy: {:.2f}%'.format(
     #     epoch, avg_loss, accuracy * 100))
     # return avg_loss, accuracy
-    return avg_loss
+    return avg_loss, accuracy
 
 
 def test(model, device, test_loader, criterion):
@@ -146,15 +153,18 @@ def test(model, device, test_loader, criterion):
         for (images_1, images_2, targets) in test_loader:
             images_1, images_2, targets = images_1.to(device), images_2.to(device), targets.to(device)
             oupt1, oupt2 = model(images_1, images_2)
+
             test_loss += criterion(oupt1, oupt2, targets).item() * targets.size(0)  # accumulate batch loss
-            # pred = (outputs >= 0.5).float()  # Convert probabilities to binary predictions
-            # correct += pred.eq(targets).sum().item()
+
+            predicted_similarity = torch.nn.functional.pairwise_distance(oupt1, oupt2)
+            predicted_labels = (predicted_similarity > 0.5).float()  # Binary labels (0 or 1)
+            correct += predicted_labels.eq(targets).sum().item()  #
+
             total_samples += targets.size(0)
 
-    test_loss /= len(test_loader.dataset)
-    # accuracy = correct / total_samples
-    # return test_loss, accuracy
-    return test_loss
+    test_loss = test_loss / total_samples
+    accuracy = correct / total_samples
+    return test_loss, accuracy
 
 
 def load_image(image_path):
@@ -169,29 +179,6 @@ def load_image(image_path):
     input_patch = input_tensor.unsqueeze(0)
 
     return input_patch
-
-
-def take(n, iterable):
-    """Return the first n items of the iterable as a list."""
-    return list(islice(iterable, n))
-
-
-def distance_estimator(query_set, gallery_set, model, device, N):
-    model.eval()
-    result = dict()
-    for img1, img1_name in query_set:
-        tmp = dict()
-        for img2, img2_name in gallery_set:
-            img1, img2 = img1.to(device), img2.to(device)
-            out1, out2 = model(img1, img2)
-            dissim = torch.nn.functional.pairwise_distance(out1, out2)
-            tmp[img2_name] = np.round(dissim.item(), 6)
-        tmp = {k: v for k, v in sorted(tmp.items(), key=lambda item: item[1], reverse=False)}  # sort tmp by values
-        print("--------------------------------------------------------------------")
-        print(img1_name)
-        print(tmp)
-        result[img1_name] = take(N, tmp.keys())
-    return result
 
 
 class ContrastiveLoss(torch.nn.Module):
@@ -279,30 +266,30 @@ def main():
 
     best_val_accuracy = 0
     best_val_loss = float('inf')
-    for epoch in range(60):
-        train_loss = train(model, device, train_loader, optimizer, criterion)
-        val_loss = test(model, device, test_loader, criterion)
+    for epoch in range(40):
+        train_loss, train_accuracy = train(model, device, train_loader, optimizer, criterion)
+        val_loss, val_accuracy = test(model, device, test_loader, criterion)
         print(
             'Epoch {}: Train loss {:.4f}, Train acc {:.4f}, Valid loss {:.4f}, Valid acc {:.4f}, Best acc {:.4f}'.format(
-                epoch + 1, train_loss, 0, val_loss, 0, best_val_accuracy))
+                epoch + 1, train_loss, train_accuracy, val_loss, val_accuracy, best_val_accuracy))
 
         # scheduler.step()
 
         # Update the best model so far
-        # if val_accuracy >= best_val_accuracy:
-        #
-        #     day = start.strftime("%Y-%m-%d")  # Format: YYYY-MM-DD
-        #     time = start.strftime("%H:%M:%S")  # Format: HH:MM:SS
-        #
-        #     torch.save(model.state_dict(),
-        #                checkpoint_path / f'Siamese_best_{day}{time}_{round(best_val_accuracy, 4)}.pth')
-        #     best_val_accuracy = val_accuracy
-        # else:
-        #     # update the best val loss so far
-        #     best_val_loss = val_loss
-        #     trigger = 0
-    torch.save(model.state_dict(),
-               checkpoint_path / f'Siamese_best__.pth')
+        if val_accuracy >= best_val_accuracy and val_accuracy > 0.80:
+            day = start.strftime("%Y-%m-%d")  # Format: YYYY-MM-DD
+            time = start.strftime("%H:%M:%S")  # Format: HH:MM:SS
+            best_val_accuracy = val_accuracy
+            torch.save(model.state_dict(),
+                       checkpoint_path / f'Siamese_best__{round(best_val_accuracy, 4)}__{day}__{time}.pth')
+            # print("the model exported")
+
+
+        else:
+
+            best_val_loss = val_loss
+            trigger = 0
+
     end = datetime.datetime.now()
     print('duration', end - start)
     print(
@@ -311,25 +298,6 @@ def main():
     # img1 = '/Users/munkhdelger/PycharmProjects/ML_competition/data/faces/ARCHIVE/img_celeba_under_1000_cropped/000023.jpg'
     # img2 = '/Users/munkhdelger/PycharmProjects/ML_competition/data/faces/ARCHIVE/img_celeba_under_1000_cropped/000023.jpg'
     # img3 = '/Users/munkhdelger/PycharmProjects/ML_competition/data/faces/ARCHIVE/img_celeba_under_1000_cropped/000077.jpg'
-
-    # img1 = load_image(img1).to(device)
-    # img2 = load_image(img2).to(device)
-    # img3 = load_image(img3).to(device)
-    # out1, out2 = model(img1, img2)
-    # dissim = torch.nn.functional.pairwise_distance(out1, out2)
-    # print(f"output of same {np.round(dissim.item(), 6)}")
-    #
-    # out1, out2 = model(img2, img3)
-    # dissim = torch.nn.functional.pairwise_distance(out1, out2)
-    # print(f"output of different {np.round(dissim.item(), 6)}")
-
-    # --------------------------------------------------------------------------
-    query_set, gallery_set = dataset.get_query_and_gallery()
-    result = distance_estimator(query_set, gallery_set, model, device, N=10)
-    # print(result)
-    print("###############################################################")
-    for i, j in result.items():
-        print(i, j)
 
 
 if __name__ == '__main__':
