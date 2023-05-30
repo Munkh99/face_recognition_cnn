@@ -1,4 +1,5 @@
 import json
+import os
 from itertools import islice
 import Siamese_comp_contrastive
 import torch
@@ -49,9 +50,12 @@ def main():
 
     model = Siamese_comp_contrastive.SiameseNetwork()
 
-    model_path = '/Users/munkhdelger/PycharmProjects/ML_competition/checkpoints/Siamese_best__0.8434__2023-05-29__18:30:55.pth'
-    model_state = torch.load(model_path)
-    model.load_state_dict(model_state)
+    checkpoint_file = '/Users/munkhdelger/PycharmProjects/ML_competition/checkpoints/best_model_checkpoint.pth'
+    if os.path.isfile(checkpoint_file):
+        checkpoint = torch.load(checkpoint_file)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        best_val_accuracy = checkpoint["best_val_accuracy"]
+        print(best_val_accuracy)
     model = model.to(device)
 
     query_set, gallery_set = dataset.get_query_and_gallery()
